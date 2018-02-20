@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016 The Android Open Source Project
+# Copyright (C) 2017 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,9 @@
 # limitations under the License.
 #
 
-from vts.runners.host import const
-from vts.testcases.kernel.ltp.shell_environment.definitions.base_definitions import check_setup_cleanup
+LOCAL_PATH := $(call my-dir)
 
+include $(CLEAR_VARS)
 
-class LoopDeviceSupport(check_setup_cleanup.CheckSetupCleanup):
-    """Class for checking loopback device support."""
-    note = "Kernel does not have loop device support"
-
-    def Check(self):
-        return not self.ExecuteShellCommand("ls /dev/loop-control")[const.EXIT_CODE][0]
+LOCAL_MODULE := VtsDeviceTreeEarlyMountTest
+-include test/vts/tools/build/Android.host_config.mk

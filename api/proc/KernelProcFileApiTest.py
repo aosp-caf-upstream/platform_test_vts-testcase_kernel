@@ -36,6 +36,7 @@ from vts.testcases.kernel.api.proc import ProcRemoveUidRangeTest
 from vts.testcases.kernel.api.proc import ProcSimpleFileTests
 from vts.testcases.kernel.api.proc import ProcShowUidStatTest
 from vts.testcases.kernel.api.proc import ProcStatTest
+from vts.testcases.kernel.api.proc import ProcUidIoStatsTest
 from vts.testcases.kernel.api.proc import ProcUidTimeInStateTest
 from vts.testcases.kernel.api.proc import ProcVersionTest
 from vts.testcases.kernel.api.proc import ProcVmallocInfoTest
@@ -62,12 +63,18 @@ TEST_OBJECTS = {
     ProcQtaguidCtrlTest.ProcQtaguidCtrlTest(),
     ProcRemoveUidRangeTest.ProcRemoveUidRangeTest(),
     ProcSimpleFileTests.ProcCorePipeLimit(),
+    ProcSimpleFileTests.ProcDirtyBackgroundBytes(),
+    ProcSimpleFileTests.ProcDirtyBackgroundRatio(),
     ProcSimpleFileTests.ProcDmesgRestrict(),
+    ProcSimpleFileTests.ProcDropCaches(),
+    ProcSimpleFileTests.ProcExtraFreeKbytes(),
     ProcSimpleFileTests.ProcKptrRestrictTest(),
+    ProcSimpleFileTests.ProcMaxMapCount(),
     ProcSimpleFileTests.ProcMmapMinAddrTest(),
     ProcSimpleFileTests.ProcMmapRndBitsTest(),
     ProcSimpleFileTests.ProcModulesDisabled(),
     ProcSimpleFileTests.ProcOverCommitMemoryTest(),
+    ProcSimpleFileTests.ProcPageCluster(),
     ProcSimpleFileTests.ProcPanicOnOops(),
     ProcSimpleFileTests.ProcPerfEventMaxSampleRate(),
     ProcSimpleFileTests.ProcPerfEventParanoid(),
@@ -76,10 +83,19 @@ TEST_OBJECTS = {
     ProcSimpleFileTests.ProcProtectedHardlinks(),
     ProcSimpleFileTests.ProcProtectedSymlinks(),
     ProcSimpleFileTests.ProcRandomizeVaSpaceTest(),
+    ProcSimpleFileTests.ProcSchedChildRunsFirst(),
+    ProcSimpleFileTests.ProcSchedLatencyNS(),
+    ProcSimpleFileTests.ProcSchedRTPeriodUS(),
+    ProcSimpleFileTests.ProcSchedRTRuntimeUS(),
+    ProcSimpleFileTests.ProcSchedTunableScaling(),
+    ProcSimpleFileTests.ProcSchedWakeupGranularityNS(),
     ProcShowUidStatTest.ProcShowUidStatTest(),
     ProcSimpleFileTests.ProcSuidDumpable(),
+    ProcSimpleFileTests.ProcSysAbiSwapInstruction(),
+    ProcSimpleFileTests.ProcSysRqTest(),
     ProcSimpleFileTests.ProcUptime(),
     ProcStatTest.ProcStatTest(),
+    ProcUidIoStatsTest.ProcUidIoStatsTest(),
     ProcUidTimeInStateTest.ProcUidTimeInStateTest(),
     ProcVersionTest.ProcVersionTest(),
     ProcVmallocInfoTest.ProcVmallocInfoTest(),
