@@ -10,7 +10,6 @@ DISABLED_TESTS = [
     'syscalls.chown02_16',
     'syscalls.chown03_16',
     'syscalls.chown05_16',
-    'syscalls.fchown03',
     'syscalls.fchown04',
     'syscalls.fchown01_16',
     'syscalls.fchown02_16',
@@ -43,7 +42,6 @@ DISABLED_TESTS = [
     'syscalls.pathconf01',
     'syscalls.preadv02',
     'syscalls.pwritev02',
-    'syscalls.rename11',
     'syscalls.rt_sigprocmask01',
     'syscalls.setfsgid01_16',
     'syscalls.setfsgid02_16',
@@ -123,7 +121,6 @@ DISABLED_TESTS = [
     'fs.rwtest04',
     'fs.rwtest05',
     'fs.iogen01',
-    'fs.ftest06',
     'fs.isofs',
     'fsx.fsx-linux',
     'mm.mtest06',
@@ -295,4 +292,6 @@ DISABLED_TESTS = [
     'syscalls.fcntl36',
     # b/71416822: fails in VTS
     'tracing.dynamic_debug01',
+    # (TODO): b/73784987
+    'syscalls.mount03',
 ]

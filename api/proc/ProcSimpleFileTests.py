@@ -16,8 +16,8 @@
 
 import math
 
+from parse import with_pattern
 from vts.testcases.kernel.api.proc import KernelProcFileTestBase
-
 from vts.utils.python.file import target_file_utils
 
 # Test for /proc/sys/abi/swp.
@@ -42,6 +42,21 @@ class ProcSysAbiSwapInstruction(KernelProcFileTestBase.KernelProcFileTestBase):
         return target_file_utils.IsReadWrite
 
 # Test for /proc/sys/kernel/*.
+
+class ProcCorePattern(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/core_pattern is used to specify a core dumpfile pattern
+    name.
+    '''
+
+    def parse_contents(self, contents):
+        pass
+
+    def get_path(self):
+        return "/proc/sys/kernel/core_pattern"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
 
 class ProcCorePipeLimit(KernelProcFileTestBase.KernelProcFileTestBase):
     '''/proc/sys/kernel/core_pipe_limit defines how many concurrent crashing
@@ -71,6 +86,48 @@ class ProcDmesgRestrict(KernelProcFileTestBase.KernelProcFileTestBase):
 
     def get_path(self):
         return "/proc/sys/kernel/dmesg_restrict"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcDomainname(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/domainname determines YP/NIS domain name of the system.'''
+
+    def parse_contents(self, contents):
+        pass
+
+    def get_path(self):
+        return "/proc/sys/kernel/domainname"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcHostname(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/hostname determines the system's host name.'''
+
+    def parse_contents(self, contents):
+        pass
+
+    def get_path(self):
+        return "/proc/sys/kernel/hostname"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcHungTaskTimeoutSecs(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/hung_task_timeout_secs controls the default timeout
+    (in seconds) used to determine when a task has become non-responsive and
+    should be considered hung.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def get_path(self):
+        return "/proc/sys/kernel/hung_task_timeout_secs"
 
     def get_permission_checker(self):
         return target_file_utils.IsReadWrite
@@ -171,6 +228,25 @@ class ProcPidMax(KernelProcFileTestBase.KernelProcFileTestBase):
 
     def get_permission_checker(self):
         return target_file_utils.IsReadWrite
+
+
+@with_pattern(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+)
+def token_uuid(text):
+    return text
+
+class ProcSysKernelRandomBootId(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/random/boot_id generates a random ID each boot.'''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:uuid}", contents, dict(uuid=token_uuid))[0]
+
+    def get_path(self):
+        return "/proc/sys/kernel/random/boot_id"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadOnly
 
 
 class ProcRandomizeVaSpaceTest(KernelProcFileTestBase.KernelProcFileTestBase):
