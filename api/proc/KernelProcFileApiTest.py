@@ -36,7 +36,9 @@ from vts.testcases.kernel.api.proc import ProcRemoveUidRangeTest
 from vts.testcases.kernel.api.proc import ProcSimpleFileTests
 from vts.testcases.kernel.api.proc import ProcShowUidStatTest
 from vts.testcases.kernel.api.proc import ProcStatTest
+from vts.testcases.kernel.api.proc import ProcUidIoStatsTest
 from vts.testcases.kernel.api.proc import ProcUidTimeInStateTest
+from vts.testcases.kernel.api.proc import ProcUidCpuPowerTests
 from vts.testcases.kernel.api.proc import ProcVersionTest
 from vts.testcases.kernel.api.proc import ProcVmallocInfoTest
 from vts.testcases.kernel.api.proc import ProcVmstatTest
@@ -61,13 +63,23 @@ TEST_OBJECTS = {
     ProcModulesTest.ProcModulesTest(),
     ProcQtaguidCtrlTest.ProcQtaguidCtrlTest(),
     ProcRemoveUidRangeTest.ProcRemoveUidRangeTest(),
+    ProcSimpleFileTests.ProcCorePattern(),
     ProcSimpleFileTests.ProcCorePipeLimit(),
+    ProcSimpleFileTests.ProcDirtyBackgroundBytes(),
+    ProcSimpleFileTests.ProcDirtyBackgroundRatio(),
     ProcSimpleFileTests.ProcDmesgRestrict(),
+    ProcSimpleFileTests.ProcDomainname(),
+    ProcSimpleFileTests.ProcDropCaches(),
+    ProcSimpleFileTests.ProcExtraFreeKbytes(),
+    ProcSimpleFileTests.ProcHostname(),
+    ProcSimpleFileTests.ProcHungTaskTimeoutSecs(),
     ProcSimpleFileTests.ProcKptrRestrictTest(),
+    ProcSimpleFileTests.ProcMaxMapCount(),
     ProcSimpleFileTests.ProcMmapMinAddrTest(),
     ProcSimpleFileTests.ProcMmapRndBitsTest(),
     ProcSimpleFileTests.ProcModulesDisabled(),
     ProcSimpleFileTests.ProcOverCommitMemoryTest(),
+    ProcSimpleFileTests.ProcPageCluster(),
     ProcSimpleFileTests.ProcPanicOnOops(),
     ProcSimpleFileTests.ProcPerfEventMaxSampleRate(),
     ProcSimpleFileTests.ProcPerfEventParanoid(),
@@ -76,11 +88,24 @@ TEST_OBJECTS = {
     ProcSimpleFileTests.ProcProtectedHardlinks(),
     ProcSimpleFileTests.ProcProtectedSymlinks(),
     ProcSimpleFileTests.ProcRandomizeVaSpaceTest(),
+    ProcSimpleFileTests.ProcSchedChildRunsFirst(),
+    ProcSimpleFileTests.ProcSchedLatencyNS(),
+    ProcSimpleFileTests.ProcSchedRTPeriodUS(),
+    ProcSimpleFileTests.ProcSchedRTRuntimeUS(),
+    ProcSimpleFileTests.ProcSchedTunableScaling(),
+    ProcSimpleFileTests.ProcSchedWakeupGranularityNS(),
     ProcShowUidStatTest.ProcShowUidStatTest(),
     ProcSimpleFileTests.ProcSuidDumpable(),
+    ProcSimpleFileTests.ProcSysAbiSwapInstruction(),
+    ProcSimpleFileTests.ProcSysKernelRandomBootId(),
+    ProcSimpleFileTests.ProcSysRqTest(),
     ProcSimpleFileTests.ProcUptime(),
     ProcStatTest.ProcStatTest(),
+    ProcUidIoStatsTest.ProcUidIoStatsTest(),
     ProcUidTimeInStateTest.ProcUidTimeInStateTest(),
+    ProcUidCpuPowerTests.ProcUidCpuPowerTimeInStateTest(),
+    ProcUidCpuPowerTests.ProcUidCpuPowerConcurrentActiveTimeTest(),
+    ProcUidCpuPowerTests.ProcUidCpuPowerConcurrentPolicyTimeTest(),
     ProcVersionTest.ProcVersionTest(),
     ProcVmallocInfoTest.ProcVmallocInfoTest(),
     ProcVmstatTest.ProcVmstat(),
@@ -158,6 +183,90 @@ class KernelProcFileApiTest(base_test.BaseTestClass):
 
         return results[const.STDOUT][0]
 
+    def testProcPagetypeinfo(self):
+        filepath = "/proc/pagetypeinfo"
+        # Check that incident_helper can parse /proc/pagetypeinfo.
+        result = self.shell.Execute("cat %s | incident_helper -s 2001" % filepath)
+        asserts.assertEqual(
+            result[const.EXIT_CODE][0], 0,
+            "Failed to parse %s." % filepath)
+
+    def testProcSysrqTrigger(self):
+        filepath = "/proc/sysrq-trigger"
+
+        # This command only performs a best effort attempt to remount all
+        # filesystems. Check that it doesn't throw an error.
+        self.dut.adb.shell("\"echo u > %s\"" % filepath)
+
+        # Reboot the device.
+        self.dut.adb.shell("\"echo b > %s\"" % filepath)
+        asserts.assertFalse(self.dut.hasBooted(), "Device is still alive.")
+        self.dut.waitForBootCompletion()
+        self.dut.rootAdb()
+
+        # Crash the system.
+        self.dut.adb.shell("\"echo c > %s\"" % filepath)
+        asserts.assertFalse(self.dut.hasBooted(), "Device is still alive.")
+        self.dut.waitForBootCompletion()
+        self.dut.rootAdb()
+
+    def testProcUidProcstatSet(self):
+        def UidIOStats(uid):
+            """Returns I/O stats for a given uid.
+
+            Args:
+                uid, uid number.
+
+            Returns:
+                list of I/O numbers.
+            """
+            stats_path = "/proc/uid_io/stats"
+            result = self.dut.adb.shell(
+                    "\"cat %s | grep '^%d'\"" % (stats_path, uid),
+                    no_except=True)
+            return result[const.STDOUT].split()
+
+        def CheckStatsInState(state):
+            """Sets VTS (root uid) into a given state and checks the stats.
+
+            Args:
+                state, boolean. Use False for foreground,
+                and True for background.
+            """
+            state = 1 if state else 0
+            filepath = "/proc/uid_procstat/set"
+            root_uid = 0
+
+            # fg write chars are at index 2, and bg write chars are at 6.
+            wchar_index = 6 if state else 2
+            old_wchar = UidIOStats(root_uid)[wchar_index]
+            self.dut.adb.shell("\"echo %d %s > %s\"" % (root_uid, state, filepath))
+            # This should increase the number of write syscalls.
+            self.dut.adb.shell("\"echo foo\"")
+            asserts.assertLess(
+                old_wchar,
+                UidIOStats(root_uid)[wchar_index],
+                "Number of write syscalls has not increased.")
+
+        CheckStatsInState(False)
+        CheckStatsInState(True)
+
+    def testProcPerUidTimes(self):
+        # TODO: make these files mandatory once they're in AOSP
+        try:
+            filepaths = self.dut.adb.shell("find /proc/uid -name time_in_state")
+        except:
+            asserts.skip("/proc/uid/ directory does not exist and is optional")
+
+        asserts.skipIf(not filepaths,
+                       "per-UID time_in_state files do not exist and are optional")
+
+        filepaths = filepaths.splitlines()
+        for filepath in filepaths:
+            target_file_utils.assertPermissionsAndExistence(
+                self.shell, filepath, target_file_utils.IsReadOnly
+            )
+            file_content = self.ReadFileContent(filepath)
 
 if __name__ == "__main__":
     test_runner.main()
