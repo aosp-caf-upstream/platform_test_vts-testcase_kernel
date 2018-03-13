@@ -14,11 +14,49 @@
 # limitations under the License.
 #
 
-from vts.testcases.kernel.api.proc import KernelProcFileTestBase
+import math
 
+from parse import with_pattern
+from vts.testcases.kernel.api.proc import KernelProcFileTestBase
 from vts.utils.python.file import target_file_utils
 
+# Test for /proc/sys/abi/swp.
+
+class ProcSysAbiSwapInstruction(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/abi/swp sets the execution behaviour for the obsoleted ARM instruction
+    SWP. As per the setting in /proc/sys/abi/swp, the usage of SWP{B}
+    can either generate an undefined instruction abort or use software emulation
+    or hardware execution.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def result_correct(self, result):
+        return result >= 0 and result <= 2
+
+    def get_path(self):
+        return "/proc/sys/abi/swp"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
 # Test for /proc/sys/kernel/*.
+
+class ProcCorePattern(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/core_pattern is used to specify a core dumpfile pattern
+    name.
+    '''
+
+    def parse_contents(self, contents):
+        pass
+
+    def get_path(self):
+        return "/proc/sys/kernel/core_pattern"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
 
 class ProcCorePipeLimit(KernelProcFileTestBase.KernelProcFileTestBase):
     '''/proc/sys/kernel/core_pipe_limit defines how many concurrent crashing
@@ -48,6 +86,48 @@ class ProcDmesgRestrict(KernelProcFileTestBase.KernelProcFileTestBase):
 
     def get_path(self):
         return "/proc/sys/kernel/dmesg_restrict"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcDomainname(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/domainname determines YP/NIS domain name of the system.'''
+
+    def parse_contents(self, contents):
+        pass
+
+    def get_path(self):
+        return "/proc/sys/kernel/domainname"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcHostname(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/hostname determines the system's host name.'''
+
+    def parse_contents(self, contents):
+        pass
+
+    def get_path(self):
+        return "/proc/sys/kernel/hostname"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcHungTaskTimeoutSecs(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/hung_task_timeout_secs controls the default timeout
+    (in seconds) used to determine when a task has become non-responsive and
+    should be considered hung.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def get_path(self):
+        return "/proc/sys/kernel/hung_task_timeout_secs"
 
     def get_permission_checker(self):
         return target_file_utils.IsReadWrite
@@ -150,6 +230,25 @@ class ProcPidMax(KernelProcFileTestBase.KernelProcFileTestBase):
         return target_file_utils.IsReadWrite
 
 
+@with_pattern(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+)
+def token_uuid(text):
+    return text
+
+class ProcSysKernelRandomBootId(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/random/boot_id generates a random ID each boot.'''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:uuid}", contents, dict(uuid=token_uuid))[0]
+
+    def get_path(self):
+        return "/proc/sys/kernel/random/boot_id"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadOnly
+
+
 class ProcRandomizeVaSpaceTest(KernelProcFileTestBase.KernelProcFileTestBase):
     '''/proc/sys/kernel/randomize_va_space determines the address layout randomization
     policy for the system.
@@ -170,7 +269,203 @@ class ProcRandomizeVaSpaceTest(KernelProcFileTestBase.KernelProcFileTestBase):
         return target_file_utils.IsReadWrite
 
 
+class ProcSchedChildRunsFirst(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/sched_child_runs_first causes newly forked tasks to
+    be favored in scheduling over their parents.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def get_path(self):
+        return "/proc/sys/kernel/sched_child_runs_first"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcSchedLatencyNS(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/sched_latency_ns is the maximum latency in nanoseconds a
+    task may incur prior to being scheduled.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def result_correct(self, result):
+        return result >= 100000 and result <= 1000000000
+
+    def get_path(self):
+        return "/proc/sys/kernel/sched_latency_ns"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcSchedRTPeriodUS(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/sched_rt_period_us defines the period length used by the
+    system-wide RT execution limit in microseconds.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def result_correct(self, result):
+        return result >= 1 and result <= math.pow(2,31)
+
+    def get_path(self):
+        return "/proc/sys/kernel/sched_rt_period_us"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcSchedRTRuntimeUS(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/sched_rt_runtime_us defines the amount of time in
+    microseconds relative to sched_rt_period_us that the system may execute RT
+    tasks.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def result_correct(self, result):
+        return result >= -1 and result <= (math.pow(2,31) - 1)
+
+    def get_path(self):
+        return "/proc/sys/kernel/sched_rt_runtime_us"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcSchedTunableScaling(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/sched_tunable_scaling determines whether
+    sched_latency_ns should be automatically adjusted by the scheduler based on
+    the number of CPUs.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def result_correct(self, result):
+        return result >= 0 and result <= 2
+
+    def get_path(self):
+        return "/proc/sys/kernel/sched_tunable_scaling"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcSchedWakeupGranularityNS(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/sched_wakeup_granularity_ns defines how much more
+    virtual runtime task A must have than task B in nanoseconds in order for
+    task B to preempt it.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def result_correct(self, result):
+        return result >= 0 and result <= 1000000000
+
+    def get_path(self):
+        return "/proc/sys/kernel/sched_wakeup_granularity_ns"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcSysRqTest(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/kernel/sysrq controls the functions allowed to be invoked
+    via the SysRq key.'''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def result_correct(self, result):
+        return result >= 0 and result <= 511
+
+    def get_path(self):
+        return "/proc/sys/kernel/sysrq"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
 # Tests for /proc/sys/vm/*.
+
+class ProcDirtyBackgroundBytes(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/vm/dirty_background_bytes contains the amount of dirty memory
+    at which the background kernel flusher threads will start writeback.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def get_path(self):
+        return "/proc/sys/vm/dirty_background_bytes"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcDirtyBackgroundRatio(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/vm/dirty_background_ratio contains, as a percentage of total
+    available memory that contains free pages and reclaimable pages, the number
+    of pages at which the background kernel flusher threads will start writing
+    out dirty data.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def result_correct(self, result):
+        return result >= 0 and result <= 100
+
+    def get_path(self):
+        return "/proc/sys/vm/dirty_background_ratio"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcDropCaches(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''Writing to /proc/sys/vm/drop_caches will cause the kernel to drop clean
+    caches.
+    '''
+
+    def parse_contents(self, contents):
+        # Format of this file is not documented, so don't check that.
+        return ''
+
+    def get_path(self):
+        return "/proc/sys/vm/drop_caches"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+
+class ProcExtraFreeKbytes(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/vm/extra_free_kbytes tells the VM to keep extra free memory
+    between the threshold where background reclaim (kswapd) kicks in, and the
+    threshold where direct reclaim (by allocating processes) kicks in.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def get_path(self):
+        return "/proc/sys/vm/extra_free_kbytes"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
+
+    def file_optional(self):
+        # This file isn't in Android common kernel.
+        return True
+
 
 class ProcOverCommitMemoryTest(KernelProcFileTestBase.KernelProcFileTestBase):
     '''/proc/sys/vm/overcommit_memory determines the kernel virtual memory accounting mode.
@@ -188,6 +483,21 @@ class ProcOverCommitMemoryTest(KernelProcFileTestBase.KernelProcFileTestBase):
     def get_permission_checker(self):
         """Get r/w file permission checker.
         """
+        return target_file_utils.IsReadWrite
+
+
+class ProcMaxMapCount(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/vm/max_map_count contains the maximum number of memory map areas a process
+    may have.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def get_path(self):
+        return "/proc/sys/vm/max_map_count"
+
+    def get_permission_checker(self):
         return target_file_utils.IsReadWrite
 
 
@@ -230,6 +540,21 @@ class ProcMmapRndBitsTest(KernelProcFileTestBase.KernelProcFileTestBase):
 class ProcMmapRndCompatBitsTest(ProcMmapRndBitsTest):
     def get_path(self):
         return "/proc/sys/vm/mmap_rnd_compat_bits"
+
+
+class ProcPageCluster(KernelProcFileTestBase.KernelProcFileTestBase):
+    '''/proc/sys/vm/page-cluster controls the number of pages up to which
+    consecutive pages are read in from swap in a single attempt.
+    '''
+
+    def parse_contents(self, contents):
+        return self.parse_line("{:d}\n", contents)[0]
+
+    def get_path(self):
+        return "/proc/sys/vm/page-cluster"
+
+    def get_permission_checker(self):
+        return target_file_utils.IsReadWrite
 
 
 # Tests for /proc/sys/fs/*.
